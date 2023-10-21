@@ -37,8 +37,11 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     let Some(number) = octocrab.pulls(owner, repo)
         .get(1).await?.comments
         else { Err("No comments")? };
-    let body = format!("Comment created from Github action #{:?}",
-        get_env("GITHUB_RUN_NUMBER"));
+    let body = format!(
+        "Comment created from [Github action {}](https://github.com/Chris00/sci-calc-experiments/actions)",
+        get_env("GITHUB_RUN_NUMBER").unwrap());
+    println!("→ Want to add a comment to issue {number}.");
+    let number = 1;
     println!("→ Want to add a comment to issue {number}.");
     let _c = octocrab.issues(owner, repo)
         .create_comment(number, body)
