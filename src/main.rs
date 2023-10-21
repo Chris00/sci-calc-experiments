@@ -32,8 +32,8 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     }
 
     if let Some(event) = get_env("GITHUB_EVENT_NAME") {
-        if event == "push" {
-            println!("This is a push");
+        if event == "pull_request" {
+            println!("This is a PR");
         } else {
             println!("Event: {event:?}");
         }
