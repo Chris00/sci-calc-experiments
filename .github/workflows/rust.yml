@@ -19,5 +19,5 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Test student code
-      run: cargo run --verbose
+      run: cargo run
 

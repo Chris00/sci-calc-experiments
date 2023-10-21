@@ -19,24 +19,27 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     let repo = get_env("GITHUB_REPOSITORY")
         .ok_or("Github repository".to_string())?;
     let mut repo = repo.split("/");
-    let name = repo.next().ok_or("Repository owner")?;
+    let owner = repo.next().ok_or("Repository owner")?;
     let repo = repo.next().ok_or("Repository name")?;
-    let pulls = octocrab.pulls(name, repo)
+    let pulls = octocrab.pulls(owner, repo)
         .list()
         .state(params::State::Open)
         .send()
         .await?;
 
     for p in pulls {
-        println!("- URL: {}", p.url)
+        println!("- URL: {}", p.url);
     }
 
-    let _pulls = octocrab.pulls(name, repo)
-        .update(1)
-        .body(format!("Updated from run {:?}",
-            get_env("GITHUB_RUN_NUMBER")))
-        .send()
+    let Some(number) = octocrab.pulls(owner, repo)
+        .get(1).await?.comments
+        else { Err("No comments")? };
+    let body = format!("Comment created from Github action #{:?}",
+        get_env("GITHUB_RUN_NUMBER"));
+    let _c = octocrab.issues(owner, repo)
+        .create_comment(number, body)
         .await?;
+
 
     if let Some(event) = get_env("GITHUB_EVENT_NAME") {
         if event == "pull_request" {
