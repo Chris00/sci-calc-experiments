@@ -11,9 +11,9 @@ fn get_env(env: impl AsRef<str>) -> Option<String> {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn Error>>  {
-    // for (k, v) in env::vars() {
-    //     println!("{k} → {v}");
-    // }
+    for (k, v) in env::vars() {
+        println!("{k} → {v}");
+    }
 
     let octocrab = octocrab::instance();
     let repo = get_env("GITHUB_REPOSITORY")
