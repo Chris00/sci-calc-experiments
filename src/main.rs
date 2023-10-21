@@ -31,6 +31,13 @@ async fn main() -> Result<(), Box<dyn Error>>  {
         println!("- URL: {}", p.url)
     }
 
+    let _pulls = octocrab.pulls(name, repo)
+        .update(1)
+        .body(format!("Updated from run {:?}",
+            get_env("GITHUB_RUN_NUMBER")))
+        .send()
+        .await?;
+
     if let Some(event) = get_env("GITHUB_EVENT_NAME") {
         if event == "pull_request" {
             println!("This is a PR");
