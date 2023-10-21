@@ -34,21 +34,25 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     // To add a comment, one needs to be authenticated
     let token = std::env::var("GITHUB_TOKEN")?;
     let octocrab = Octocrab::builder().personal_token(token).build()?;
-    dbg!(octocrab.pulls(owner, repo).get(1).await?);
-    let Some(number) = octocrab.pulls(owner, repo)
-        .get(1).await?.comments
+    let Some(comments) = octocrab.pulls(owner, repo)
+        .get(1).await?.comments_url
         else { Err("No comments")? };
+    let issue: u64 = {
+        let mut segs = comments.path_segments().unwrap();
+        for s in &mut segs {
+            if s == "issues" { break }
+        }
+        segs.next().unwrap().parse()?
+    };
     let user = get_env("GITHUB_ACTOR").unwrap_or(
         "Inconnu".to_string());
     let body = format!(
         "Cher {user},\n\n\
-Ce commentaire a été créé par GH run #{n}, issue #{number}",
+Ce commentaire a été créé par GH run #{n}, issue #{issue}",
         n = get_env("GITHUB_RUN_NUMBER").unwrap());
-    println!("→ Want to add a comment to issue {number}.");
-    let number = 1;
-    println!("→ Want to add a comment to issue {number}.");
+    println!("→ Want to add a comment to issue {issue}.");
     let _c = octocrab.issues(owner, repo)
-        .create_comment(number, body)
+        .create_comment(issue, body)
         .await?;
 
 
