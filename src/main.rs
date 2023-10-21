@@ -1,7 +1,7 @@
 // https://docs.github.com/en/actions/security-guides/automatic-token-authentication
 
 use std::{env, error::Error};
-use octocrab::{self, params};
+use octocrab::{self, Octocrab, params};
 
 fn get_env(env: impl AsRef<str>) -> Option<String> {
     let env = env.as_ref();
@@ -31,11 +31,15 @@ async fn main() -> Result<(), Box<dyn Error>>  {
         println!("- URL: {}", p.url);
     }
 
+    // To add a comment, one needs to be authenticated
+    let token = std::env::var("GITHUB_TOKEN")?;
+    let octocrab = Octocrab::builder().personal_token(token).build()?;
     let Some(number) = octocrab.pulls(owner, repo)
         .get(1).await?.comments
         else { Err("No comments")? };
     let body = format!("Comment created from Github action #{:?}",
         get_env("GITHUB_RUN_NUMBER"));
+    println!("→ Want to add a comment to issue {number}.");
     let _c = octocrab.issues(owner, repo)
         .create_comment(number, body)
         .await?;
