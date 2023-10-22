@@ -27,8 +27,10 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     // To add a comment, one needs to be authenticated
     let token = env::var("GITHUB_TOKEN")?;
     let octocrab = Octocrab::builder().personal_token(token).build()?;
-    let Some(comments) = octocrab.pulls(owner, repo)
-        .get(1).await?.comments_url
+    let pr = octocrab.pulls(owner, repo)
+        .get(1).await?;
+    println!("PR= {:?}", pr);
+    let Some(comments) = pr.comments_url
         else { Err("No comments")? };
     let issue: u64 = {
         let mut segs = comments.path_segments().unwrap();
