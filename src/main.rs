@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     let octocrab = Octocrab::builder().personal_token(token).build()?;
     let pr = octocrab.pulls(owner, repo)
         .get(1).await?;
-    println!("PR= {:?}", pr);
+    dbg!(&pr);
     let Some(comments) = pr.comments_url
         else { Err("No comments")? };
     let issue: u64 = {
@@ -45,6 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>>  {
 Ce commentaire a été créé par GH run #{n}, issue #{issue}",
         n = env::var("GITHUB_RUN_NUMBER").unwrap());
     println!("→ Want to add a comment to issue {issue}.");
+    dbg!(octocrab.issues(owner, repo).get(issue).await?);
     let _c = octocrab.issues(owner, repo)
         .create_comment(issue, body)
         .await?;
