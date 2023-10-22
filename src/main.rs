@@ -3,12 +3,6 @@
 use std::{env, error::Error};
 use octocrab::{self, Octocrab, params};
 
-fn get_env(env: impl AsRef<str>) -> Option<String> {
-    let env = env.as_ref();
-    env::vars().find_map(|(k, v)| {
-        if k == env { Some(v) } else { None }})
-}
-
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn Error>>  {
     for (k, v) in env::vars() {
@@ -16,8 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     }
 
     let octocrab = octocrab::instance();
-    let repo = get_env("GITHUB_REPOSITORY")
-        .ok_or("Github repository".to_string())?;
+    let repo = env::var("GITHUB_REPOSITORY")?;
     let mut repo = repo.split("/");
     let owner = repo.next().ok_or("Repository owner")?;
     let repo = repo.next().ok_or("Repository name")?;
@@ -32,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     }
 
     // To add a comment, one needs to be authenticated
-    let token = std::env::var("GITHUB_TOKEN")?;
+    let token = env::var("GITHUB_TOKEN")?;
     let octocrab = Octocrab::builder().personal_token(token).build()?;
     let Some(comments) = octocrab.pulls(owner, repo)
         .get(1).await?.comments_url
@@ -44,19 +37,18 @@ async fn main() -> Result<(), Box<dyn Error>>  {
         }
         segs.next().unwrap().parse()?
     };
-    let user = get_env("GITHUB_ACTOR").unwrap_or(
-        "Inconnu".to_string());
+    let user = env::var("GITHUB_ACTOR")?;
     let body = format!(
         "Cher {user},\n\n\
 Ce commentaire a été créé par GH run #{n}, issue #{issue}",
-        n = get_env("GITHUB_RUN_NUMBER").unwrap());
+        n = env::var("GITHUB_RUN_NUMBER").unwrap());
     println!("→ Want to add a comment to issue {issue}.");
     let _c = octocrab.issues(owner, repo)
         .create_comment(issue, body)
         .await?;
 
 
-    if let Some(event) = get_env("GITHUB_EVENT_NAME") {
+    if let Ok(event) = env::var("GITHUB_EVENT_NAME") {
         if event == "pull_request" {
             println!("This is a PR");
         } else {
