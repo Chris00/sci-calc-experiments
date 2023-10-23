@@ -1,6 +1,6 @@
 // https://docs.github.com/en/actions/security-guides/automatic-token-authentication
 
-use std::{env, error::Error};
+use std::{env, error::Error, fs};
 use octocrab::{self, Octocrab, params};
 
 #[tokio::main(flavor = "current_thread")]
@@ -27,27 +27,17 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     // To add a comment, one needs to be authenticated
     let token = env::var("GITHUB_TOKEN")?;
     let octocrab = Octocrab::builder().personal_token(token).build()?;
-    let pr = octocrab.pulls(owner, repo)
-        .get(1).await?;
+    let pr = octocrab.pulls(owner, repo).get(1).await?;
     dbg!(&pr);
-    let Some(comments) = pr.comments_url
-        else { Err("No comments")? };
-    let issue: u64 = {
-        let mut segs = comments.path_segments().unwrap();
-        for s in &mut segs {
-            if s == "issues" { break }
-        }
-        segs.next().unwrap().parse()?
-    };
     let user = env::var("GITHUB_ACTOR")?;
     let body = format!(
         "Cher {user},\n\n\
-Ce commentaire a été créé par GH run #{n}, issue #{issue}",
+Ce commentaire a été créé par GH run #{n}, PR #{issue}",
+        issue = pr.number,
         n = env::var("GITHUB_RUN_NUMBER").unwrap());
-    println!("→ Want to add a comment to issue {issue}.");
-    dbg!(octocrab.issues(owner, repo).get(issue).await?);
+    println!("→ Want to add a comment to issue {}.", pr.number);
     let _c = octocrab.issues(owner, repo)
-        .create_comment(issue, body)
+        .create_comment(pr.number, body)
         .await?;
 
 
@@ -58,5 +48,9 @@ Ce commentaire a été créé par GH run #{n}, issue #{issue}",
             println!("Event: {event:?}");
         }
     }
+
+    let event = env::var("GITHUB_EVENT_PATH")?;
+    let event = fs::read_to_string(event)?;
+    dbg!(event);
     Ok(())
 }
