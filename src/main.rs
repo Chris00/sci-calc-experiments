@@ -27,7 +27,12 @@ async fn main() -> Result<(), Box<dyn Error>>  {
     // To add a comment, one needs to be authenticated
     let token = env::var("GITHUB_TOKEN")?;
     let octocrab = Octocrab::builder().personal_token(token).build()?;
-    let pr = octocrab.pulls(owner, repo).get(1).await?;
+    let pr_number =
+        env::var("GITHUB_REF_NAME").ok().and_then(|r| {
+            r.split("/").next().and_then(|i| i.parse().ok())
+        });
+    let pr_number = pr_number.unwrap_or(1);
+    let pr = octocrab.pulls(owner, repo).get(pr_number).await?;
     dbg!(&pr);
     let user = env::var("GITHUB_ACTOR")?;
     let body = format!(
